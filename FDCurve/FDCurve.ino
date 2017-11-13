@@ -16,26 +16,35 @@
           - #D11 = Enable
           - #D12 = Step
           - #D13 = Direction
-        * Endstop
-          - #D7 - up/down endstop
-          
-        * Lead screw (attached to the stepper) : lead : 2 mm / step/mm = 100 * microstep
-        * load cell: 1934.8 / gram
+  * Endstop
+    - #D7 - up/down endstop
+  * Switch (activation)
+    - #D6 - switch signal (LOW at closed / HIGH at opened)
+  
+  * Lead screw (attached to the stepper) : lead : 2 mm / step/mm = 100 * microstep
+  * load cell: 1934.8 / gram
 
 	Created day 2017 Jan. 17
 	By Sunjun Kim (kuaa.net@gmail.com)
 
-        Modified 2017 Mar. 22
-        By Sunjun Kim (kuaa.net@gmail.com)
-        * Do reverse 1mm when hit the endstop        
+  Modified 2017 Mar. 22
+  By Sunjun Kim (kuaa.net@gmail.com)
+  * Do reverse 1mm when hit the endstop
+
+
+  Modified 2017 Nov. 13
+  By Sunjun Kim (kuaa.net@gmail.com)
+  * Added switch activation (sending activation signal - a keystroke (a)
 */
 
 #include <AccelStepper.h>
 #include <Hx711.h>
+#include <Keyboard.h>
 
 AccelStepper stepper(1, 12, 13); //initialise accelstepper for a two wire board, pin 5 step, pin 4 dir
 int EN = 11;
 int STOP = 7;
+int SWITCH = 6;
 Hx711 scale(A2, A3); // initialize Hx711 module, A2=Data, A3=Clock
 long microStep = 4;
 // HCIL: gram: 2320.6 / cN = 2275,7
@@ -54,6 +63,9 @@ float safetyForceThreshold = 900; // unit: cN
 float safetyMeasureThreshold = 800; // unit: cN
 float measureStep = 0.05; // unit: mm
 
+bool keyState = false;
+int debounceCounter = 0;
+
 void setup()
 {
   Serial.begin(19200);
@@ -68,7 +80,9 @@ void setup()
   
   // Endstop init
   pinMode(STOP, INPUT);
+  pinMode(SWITCH, INPUT);
   digitalWrite(STOP, HIGH); // internal pull-up.
+  digitalWrite(SWITCH, HIGH); // internal pull-up.
 
   initAll();
 }
@@ -156,7 +170,25 @@ void loop()
     case 'm': // Measure
       runMeasure();
       break;
-  }  
+  }
+
+  // key switch check
+  bool keyPressed = isSwitch();
+  if(keyPressed == true && keyState == false && debounceCounter == 0)
+  {
+    keyState = true;
+    Keyboard.press('a');
+    debounceCounter = 50;
+  }
+  if(keyPressed == false && keyState == true && debounceCounter == 0)
+  {
+    keyState = false;
+    Keyboard.release('a');
+    debounceCounter = 50;
+  }
+
+  if(debounceCounter > 0)
+    debounceCounter--;  
 
   // Invalidity check
   bool invalid = false;
@@ -370,5 +402,10 @@ float getGram(int repeat)
 bool isEndStop()
 {
   return (digitalRead(STOP) == LOW);
+}
+
+bool isSwitch()
+{
+  return (digitalRead(SWITCH) == LOW);
 }
 
