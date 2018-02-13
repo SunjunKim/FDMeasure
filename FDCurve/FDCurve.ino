@@ -129,6 +129,10 @@ void loop()
         currentCommand = 'p';
         initProbe();
         break;
+      case 'r': // Printing out current force sensor reading
+        currentCommand = 'r';
+        Serial.println(getGram(5));
+        break;
       case 'm': // Measure
         currentCommand = 'm';
         distance = Serial.parseFloat();
@@ -250,7 +254,7 @@ void loop()
 /* ################################################################################# PROBE FUNCTION (p) */
 void initProbe()
 {
-  stepper.setCurrentPosition(-5*mmMul); // probe only 50mm
+  stepper.setCurrentPosition(-5*mmMul); // probe only for 5 mm
   stepper.setSpeed(moveSpeed); // initialize stepper speed (constant speed);
   stepper.enableOutputs();
   Serial.println("Start probing");
