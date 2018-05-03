@@ -38,7 +38,6 @@
 */
 
 #include <AccelStepper.h>
-#include <Hx711.h>
 #include <Keyboard.h>
 
 AccelStepper stepper(1, 12, 13); //initialise accelstepper for a two wire board, pin 5 step, pin 4 dir
